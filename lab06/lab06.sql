@@ -8,10 +8,9 @@ CREATE TABLE changes_history (
 CREATE OR REPLACE FUNCTION log_employee_salary()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Перевіряємо, чи дійсно змінилася зарплата
     IF OLD.salary IS DISTINCT FROM NEW.salary THEN
         INSERT INTO changes_history (id, old_value, new_value)
-        VALUES ('employees_salary_' || OLD.id, OLD.salary::VARCHAR, NEW.salary::VARCHAR);
+        VALUES ('employees_salary_' || OLD.id || '_' || TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDD_HH24MISS'), OLD.salary::VARCHAR, NEW.salary::VARCHAR);
     END IF;
     RETURN NEW;
 END;
@@ -23,7 +22,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF OLD.name IS DISTINCT FROM NEW.name THEN
         INSERT INTO changes_history (id, old_value, new_value)
-        VALUES ('cities_name_' || OLD.id, OLD.name::VARCHAR, NEW.name::VARCHAR);
+        VALUES ('cities_name_' || OLD.id || '_' || TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDD_HH24MISS'), OLD.name::VARCHAR, NEW.name::VARCHAR);
     END IF;
     RETURN NEW;
 END;
@@ -40,9 +39,10 @@ AFTER UPDATE ON cities
 FOR EACH ROW
 EXECUTE FUNCTION log_city_name();
 
+UPDATE employees SET salary = salary + 100 WHERE id = 1;
+UPDATE employees SET salary = salary + 200 WHERE id = 1;
 
-UPDATE employees SET salary = salary + 500 WHERE id = 1;
-
-UPDATE cities SET name = name || ' (Updated)' WHERE id = 1;
+UPDATE cities SET name = 'Kyiv' WHERE id = 1;
+UPDATE cities SET name = 'Lviv' WHERE id = 1;
 
 SELECT * FROM changes_history;
